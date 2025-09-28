@@ -3,7 +3,7 @@ package main
 import (
 	"context"
 	"log"
-	"orderservice/internal/connectors"
+	"orderservice/internal/infrastructure/connectors"
 
 	"github.com/gofiber/fiber/v2"
 )

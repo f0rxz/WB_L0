@@ -15,3 +15,6 @@ restart: down up
 clean:
 	docker-compose down -v
 	docker volume prune -f
+
+migrate-up:
+	goose -dir ./migrations postgres "postgres://postgres:postgres@localhost:5432/orderservice?sslmode=disable" up
