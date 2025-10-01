@@ -10,29 +10,28 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
-type Order interface {
+type Repo interface {
 	CreateOrder(ctx context.Context, order *model.Order) (string, error)
 	GetOrderByID(ctx context.Context, id string) (*model.Order, error)
 	GetAllOrders(ctx context.Context) ([]*model.Order, error)
 }
-type order struct {
+type repo struct {
 	db *pgxpool.Pool
 }
 
-func NewRepo(db *pgxpool.Pool) Order {
-	return &order{
+func NewRepo(db *pgxpool.Pool) Repo {
+	return &repo{
 		db: db,
 	}
 }
 
-func (o order) CreateOrder(ctx context.Context, ord *model.Order) (string, error) {
+func (o repo) CreateOrder(ctx context.Context, ord *model.Order) (string, error) {
 	tx, err := o.db.Begin(ctx)
 	if err != nil {
 		return "", err
 	}
 	defer tx.Rollback(ctx)
 
-	// Insert order
 	_, err = tx.Exec(ctx, `
 		INSERT INTO orders (
 			order_uid, track_number, entry, locale, internal_signature,
@@ -59,7 +58,6 @@ func (o order) CreateOrder(ctx context.Context, ord *model.Order) (string, error
 		return "", err
 	}
 
-	// Insert delivery
 	_, err = tx.Exec(ctx, `
 		INSERT INTO deliveries (order_uid, name, phone, zip, city, address, region, email)
 		VALUES (@order_uid, @name, @phone, @zip, @city, @address, @region, @email)`,
@@ -78,7 +76,6 @@ func (o order) CreateOrder(ctx context.Context, ord *model.Order) (string, error
 		return "", err
 	}
 
-	// Insert payment
 	_, err = tx.Exec(ctx, `
 		INSERT INTO payments (
 			order_uid, transaction, request_id, currency, provider,
@@ -105,7 +102,6 @@ func (o order) CreateOrder(ctx context.Context, ord *model.Order) (string, error
 		return "", err
 	}
 
-	// Insert items
 	for _, item := range ord.Items {
 		_, err = tx.Exec(ctx, `
 			INSERT INTO items (
@@ -142,7 +138,7 @@ func (o order) CreateOrder(ctx context.Context, ord *model.Order) (string, error
 	return ord.OrderUID, nil
 }
 
-func (o order) GetOrderByID(ctx context.Context, id string) (*model.Order, error) {
+func (o repo) GetOrderByID(ctx context.Context, id string) (*model.Order, error) {
 	ord := &model.Order{}
 
 	row := o.db.QueryRow(ctx, `
@@ -248,7 +244,7 @@ func (o order) GetOrderByID(ctx context.Context, id string) (*model.Order, error
 	return ord, nil
 }
 
-func (o order) GetAllOrders(ctx context.Context) ([]*model.Order, error) {
+func (o repo) GetAllOrders(ctx context.Context) ([]*model.Order, error) {
 	rows, err := o.db.Query(ctx, `
 		SELECT 
 			o.order_uid,

@@ -1,0 +1,551 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Поиск заказа</title>
+  <style>
+    :root{
+      --purple-700: #6b21a8;
+      --purple-600: #7c3aed;
+      --purple-100: #f3e8ff;
+      --bg-start: #ffffff;
+      --bg-end: #f6f0ff;
+      --muted: #6b7280;
+      --card-shadow: 0 8px 30px rgba(99,102,241,0.08);
+      --glass: rgba(255,255,255,0.65);
+      --success: #16a34a;
+      --danger: #dc2626;
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
+    }
+
+    body{
+      margin:0;
+      min-height:100vh;
+      background: linear-gradient(180deg, var(--bg-start), var(--bg-end));
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      padding:28px;
+      -webkit-font-smoothing:antialiased;
+      -moz-osx-font-smoothing:grayscale;
+      color:#111827;
+    }
+
+    .container{
+      width:100%;
+      max-width:920px;
+      display:grid;
+      grid-template-columns: 1fr 420px;
+      gap:28px;
+      align-items:center;
+    }
+
+    @media (max-width:880px){
+      .container{ grid-template-columns: 1fr; padding: 18px; }
+    }
+
+    /* Left pane (controls) */
+    .panel{
+      background: linear-gradient(180deg, rgba(124,58,237,0.06), rgba(124,58,237,0.02));
+      border-radius:18px;
+      padding:26px;
+      box-shadow: var(--card-shadow);
+      border: 1px solid rgba(124,58,237,0.06);
+      backdrop-filter: blur(6px);
+    }
+
+    header.app-header{
+      display:flex;
+      align-items:center;
+      gap:14px;
+      margin-bottom:18px;
+    }
+
+    .logo{
+      width:56px;
+      height:56px;
+      border-radius:12px;
+      background: linear-gradient(135deg,var(--purple-600),var(--purple-700));
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      color:white;
+      font-weight:700;
+      box-shadow: 0 6px 18px rgba(99,102,241,0.12);
+      flex-shrink:0;
+    }
+
+    h1{ font-size:20px; margin:0; color:var(--purple-700); }
+    p.lead{ margin:6px 0 0; color:var(--muted); font-size:13px; }
+
+    /* input row */
+    .controls{
+      display:flex;
+      gap:12px;
+      margin-top:18px;
+      align-items:center;
+    }
+    .controls .input-wrap{
+      flex:1;
+      display:flex;
+      flex-direction:column;
+      gap:8px;
+    }
+    label.small{
+      font-size:12px;
+      color:var(--muted);
+    }
+
+    input[type="text"]{
+      padding:12px 14px;
+      border-radius:12px;
+      border:1px solid rgba(99,102,241,0.12);
+      outline:none;
+      font-size:15px;
+      background: linear-gradient(180deg, rgba(255,255,255,0.9), rgba(255,255,255,0.85));
+      box-shadow: 0 3px 10px rgba(99,102,241,0.03) inset;
+      transition: box-shadow 160ms ease, border-color 160ms ease, transform 120ms ease;
+    }
+    input[type="text"]:focus{
+      border-color:rgba(124,58,237,0.9);
+      box-shadow: 0 6px 22px rgba(124,58,237,0.08);
+      transform: translateY(-1px);
+    }
+
+    button.primary{
+      padding:11px 16px;
+      border-radius:12px;
+      border: none;
+      background: linear-gradient(180deg,var(--purple-600),var(--purple-700));
+      color:white;
+      font-weight:600;
+      cursor:pointer;
+      box-shadow: 0 10px 30px rgba(124,58,237,0.18);
+      transition: transform 120ms ease, box-shadow 120ms ease;
+      white-space:nowrap;
+    }
+    button.primary:active{ transform: translateY(1px) scale(0.997); }
+    button.primary[disabled]{ opacity:0.6; cursor:not-allowed; box-shadow:none; transform:none; }
+
+    /* small helper row */
+    .helper{
+      margin-top:12px;
+      display:flex;
+      gap:10px;
+      align-items:center;
+      color:var(--muted);
+      font-size:13px;
+    }
+
+    .kbd{
+      background:transparent;
+      border:1px solid rgba(17,24,39,0.06);
+      padding:6px 8px;
+      border-radius:8px;
+      font-family:monospace;
+      font-size:12px;
+      color:var(--muted);
+    }
+
+    /* right pane (result) */
+    .result-panel{
+      background: linear-gradient(180deg, rgba(255,255,255,0.8), rgba(255,255,255,0.6));
+      border-radius:18px;
+      padding:20px;
+      box-shadow: 0 12px 40px rgba(17,24,39,0.06);
+      border:1px solid rgba(124,58,237,0.04);
+      min-height:220px;
+      display:flex;
+      flex-direction:column;
+      gap:14px;
+      justify-content:flex-start;
+    }
+
+    .empty{
+      border: 2px dashed rgba(124,58,237,0.08);
+      border-radius:12px;
+      padding:22px;
+      text-align:center;
+      color:var(--muted);
+      font-size:14px;
+      background: linear-gradient(180deg, rgba(124,58,237,0.02), transparent);
+    }
+
+    .card{
+      background: linear-gradient(180deg, #fff, rgba(250,250,255,0.96));
+      border-radius:12px;
+      padding:16px;
+      box-shadow: 0 8px 26px rgba(17,24,39,0.06);
+      border: 1px solid rgba(17,24,39,0.04);
+    }
+
+    .card .row{
+      display:flex;
+      justify-content:space-between;
+      gap:12px;
+      padding:10px 8px;
+      align-items:center;
+    }
+
+    .card .row + .row{ border-top:1px dashed rgba(17,24,39,0.04); }
+
+    .row .key{ color:var(--muted); font-size:13px; }
+    .row .val{ font-weight:600; color:#111827; text-align:right; font-size:14px; word-break: break-all;}
+
+    .meta{
+      display:flex;
+      gap:8px;
+      align-items:center;
+      font-size:13px;
+      color:var(--muted);
+    }
+
+    .badge{
+      display:inline-flex;
+      align-items:center;
+      gap:8px;
+      padding:6px 10px;
+      border-radius:999px;
+      background: linear-gradient(90deg, rgba(124,58,237,0.12), rgba(124,58,237,0.06));
+      color:var(--purple-700);
+      font-weight:600;
+      font-size:13px;
+    }
+
+    .status-pill{
+      padding:6px 10px;
+      border-radius:999px;
+      font-weight:700;
+      font-size:13px;
+      color:white;
+    }
+    .status-pending{ background: #f97316; } /* orange */
+    .status-paid{ background: var(--success); }
+    .status-canceled{ background: var(--danger); }
+    .status-default{ background: var(--purple-600); }
+
+    /* JSON pretty area */
+    pre.json{
+      margin:0;
+      overflow:auto;
+      max-height:240px;
+      border-radius:10px;
+      padding:12px;
+      background: #0f1724;
+      color:#e6eef8;
+      font-size:13px;
+      line-height:1.45;
+    }
+
+    /* small utilities */
+    .muted{ color:var(--muted); }
+    .hr{ height:1px; background:rgba(17,24,39,0.04); border-radius:1px; margin:8px 0; }
+
+    /* subtle enter animation */
+    .fade-in {
+      opacity:0;
+      transform: translateY(6px);
+      animation: appear 300ms ease-out forwards;
+    }
+    @keyframes appear{
+      to{ opacity:1; transform:none; }
+    }
+
+    /* loader */
+    .loader {
+      width:18px;
+      height:18px;
+      border-radius:50%;
+      border:3px solid rgba(255,255,255,0.12);
+      border-top-color: white;
+      animation: spin 900ms linear infinite;
+      display:inline-block;
+      vertical-align:middle;
+      margin-right:8px;
+    }
+    @keyframes spin { to{ transform:rotate(360deg);} }
+
+    /* small footer */
+    footer.foot{
+      margin-top:12px;
+      font-size:12px;
+      color:var(--muted);
+      display:flex;
+      justify-content:space-between;
+      gap:12px;
+      align-items:center;
+    }
+
+    /* responsive tweaks */
+    @media (max-width:520px){
+      .controls{ flex-direction:column; align-items:stretch; }
+      button.primary{ width:100%; }
+    }
+  </style>
+</head>
+<body>
+  <main class="container" role="main">
+    <!-- Left column: controls -->
+    <section class="panel" aria-labelledby="app-title">
+      <header class="app-header">
+        <div class="logo" aria-hidden="true">OS</div>
+        <div>
+          <h1 id="app-title">Поиск заказа</h1>
+          <p class="lead">Введите ID заказа, чтобы получить информацию с сервера.</p>
+        </div>
+      </header>
+
+      <div class="controls" aria-hidden="false">
+        <div class="input-wrap">
+          <label for="orderId" class="small">ID заказа</label>
+          <input id="orderId" type="text" inputmode="numeric" placeholder="например: 6f4a3c2b" autocomplete="off" />
+        </div>
+
+        <div style="display:flex;flex-direction:column;gap:8px;align-items:flex-end;">
+          <button id="fetchBtn" class="primary" type="button">Найти</button>
+          <div class="helper" style="font-size:12px;">
+            <span class="kbd">GET /orders/{id}</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Right column: result -->
+    <aside class="result-panel" aria-labelledby="result-head">
+      <h2 id="result-head" style="margin:0; font-size:15px; color:var(--purple-700)">Информация о заказе</h2>
+
+      <div id="resultArea" class="empty fade-in" role="region" aria-live="polite">
+        Введите ID и нажмите «Найти» — результат появится здесь.
+      </div>
+    </aside>
+  </main>
+
+  <script>
+    (function(){
+      const orderIdInput = document.getElementById('orderId');
+      const fetchBtn = document.getElementById('fetchBtn');
+      const resultArea = document.getElementById('resultArea');
+      // helper: format pretty JSON with syntax highlighting (simple)
+      function prettyJson(obj){
+        try{
+          const json = JSON.stringify(obj, null, 2);
+          // basic syntax highlight
+          return json
+            .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+            .replace(/("(\\u[a-zA-Z0-9]{4}|\\[^u]|[^\\"])*"(\s*:)?|\b(true|false|null)\b|-?\d+(?:\.\d*)?(?:[eE][+\-]?\d+)?)/g, function (match) {
+              let cls = 'number';
+              if (/^"/.test(match)) {
+                if (/:$/.test(match)) { cls = 'key'; } else { cls = 'string'; }
+              } else if (/true|false/.test(match)) { cls = 'boolean'; }
+              else if (/null/.test(match)) { cls = 'null'; }
+              return '<span class="j-' + cls + '">' + match + '</span>';
+            });
+        }catch(e){
+          return String(obj);
+        }
+      }
+
+      // build the order card UI
+      function renderOrder(order){
+        // simple known fields: id, status, amount, currency, created_at, customer
+        const rows = [];
+        const known = ['id','status','amount','currency','created_at','customer','items'];
+        known.forEach(k => { if (order[k] !== undefined) rows.push([k, order[k]]); });
+
+        // add any other keys
+        Object.keys(order).forEach(k => {
+          if (!known.includes(k)) rows.push([k, order[k]]);
+        });
+
+        const card = document.createElement('div');
+        card.className = 'card fade-in';
+
+        // header
+        const header = document.createElement('div');
+        header.style.display = 'flex';
+        header.style.justifyContent = 'space-between';
+        header.style.alignItems = 'center';
+        header.style.marginBottom = '8px';
+
+        const title = document.createElement('div');
+        title.innerHTML = `<div style="font-weight:700; color:var(--purple-700); font-size:15px">Заказ ${order.id ? ('#' + order.id) : ''}</div>
+                           <div style="font-size:13px; color:var(--muted); margin-top:4px">${order.customer ? order.customer.name || '' : ''}</div>`;
+        header.appendChild(title);
+
+        const status = document.createElement('div');
+        const st = (order.status || '').toString().toLowerCase();
+        let statusClass = 'status-default';
+        if (st.includes('paid') || st.includes('оплачен')) statusClass = 'status-paid';
+        else if (st.includes('pending') || st.includes('ожида')) statusClass = 'status-pending';
+        else if (st.includes('cancel') || st.includes('отмен')) statusClass = 'status-canceled';
+        const pill = document.createElement('span');
+        pill.className = 'status-pill ' + statusClass;
+        pill.textContent = order.status || '—';
+        status.appendChild(pill);
+        header.appendChild(status);
+
+        card.appendChild(header);
+        card.appendChild(createRowDivider());
+
+        // rows
+        rows.forEach(([k,v]) => {
+          const row = document.createElement('div');
+          row.className = 'row';
+          const key = document.createElement('div');
+          key.className = 'key';
+          key.textContent = prettifyKey(k);
+          const val = document.createElement('div');
+          val.className = 'val';
+          // nested objects / arrays -> show compact summary or amount
+          if (typeof v === 'object' && v !== null){
+            if (Array.isArray(v)){
+              val.textContent = v.length + ' item' + (v.length === 1 ? '' : 's');
+            } else {
+              // try show name or email
+              val.textContent = v.name || v.id || JSON.stringify(v);
+            }
+          } else {
+            val.textContent = String(v);
+          }
+          row.appendChild(key);
+          row.appendChild(val);
+          card.appendChild(row);
+        });
+
+        // raw JSON
+        const hr = document.createElement('div');
+        hr.className = 'hr';
+        card.appendChild(hr);
+
+        const rawTitle = document.createElement('div');
+        rawTitle.style.fontSize = '13px';
+        rawTitle.style.color = 'var(--muted)';
+        rawTitle.style.marginBottom = '8px';
+        rawTitle.textContent = 'Полный JSON-ответ';
+        card.appendChild(rawTitle);
+
+        const pre = document.createElement('pre');
+        pre.className = 'json';
+        pre.innerHTML = prettyJson(order);
+        card.appendChild(pre);
+
+        return card;
+      }
+
+      function prettifyKey(k){
+        return k.replace(/_/g,' ')
+                .replace(/\b(id|sku|qty|amt|amt)\b/ig, (m)=>m.toUpperCase())
+                .replace(/\b([a-z])/,(m)=>m.toUpperCase());
+      }
+
+      function createRowDivider(){
+        const d = document.createElement('div');
+        d.style.height = '8px';
+        return d;
+      }
+
+      function showEmpty(text){
+        resultArea.innerHTML = '';
+        resultArea.className = 'empty fade-in';
+        resultArea.textContent = text || 'Нет данных';
+      }
+
+      function showError(msg){
+        resultArea.innerHTML = '';
+        resultArea.className = 'card fade-in';
+        const div = document.createElement('div');
+        div.style.display='flex';
+        div.style.flexDirection='column';
+        div.style.gap='10px';
+        const h = document.createElement('div');
+        h.style.color = 'var(--danger)';
+        h.style.fontWeight = '700';
+        h.textContent = 'Ошибка';
+        const p = document.createElement('div');
+        p.style.color = 'var(--muted)';
+        p.textContent = msg;
+        div.appendChild(h);
+        div.appendChild(p);
+        resultArea.appendChild(div);
+      }
+
+      function setLoading(is){
+        if (is){
+          fetchBtn.disabled = true;
+          fetchBtn.innerHTML = '<span class="loader" aria-hidden="true"></span>Загрузка...';
+        }else{
+          fetchBtn.disabled = false;
+          fetchBtn.textContent = 'Найти';
+        }
+      }
+
+
+      // perform fetch
+      async function fetchOrder(){
+        const id = orderIdInput.value.trim();
+        if (!id){
+          orderIdInput.focus();
+          showError('Пожалуйста, введите ID заказа.');
+          return;
+        }
+
+        showEmpty('Запрос...')
+        setLoading(true);
+        try {
+          const resp = await fetch('/orders/' + encodeURIComponent(id), { method: 'GET' });
+          if (!resp.ok){
+            if (resp.status === 404) throw new Error('Заказ не найден (404).');
+            const txt = await resp.text().catch(()=>null);
+            throw new Error('Сервер вернул ошибку: ' + (txt || resp.status));
+          }
+          const data = await resp.json();
+          resultArea.innerHTML = '';
+          resultArea.className = '';
+          resultArea.appendChild(renderOrder(data));
+        } catch (err){
+          console.error(err);
+          showError(err.message || 'Не удалось получить заказ.');
+        } finally {
+          setLoading(false);
+        }
+      }
+
+      // keyboard: Enter triggers
+      orderIdInput.addEventListener('keydown', function(e){
+        if (e.key === 'Enter') {
+          fetchOrder();
+        }
+      });
+
+      fetchBtn.addEventListener('click', fetchOrder);
+
+      // Optional: demo mode — если запрос к /orders не отвечает (например, открыли файл напрямую),
+      // можно двойным кликом по логотипу показать демонстрационные данные.
+      const logo = document.querySelector('.logo');
+      logo.title = 'Двойной клик — демо';
+      logo.addEventListener('dblclick', function(){
+        const demo = {
+          id: 'demo-1234',
+          status: 'Paid',
+          amount: 2490,
+          currency: 'RUB',
+          created_at: new Date().toISOString(),
+          customer: { name: 'Иван Иванов', email: 'ivan@example.com' },
+          items: [
+            { sku: 'SKU-1', name: 'Фиолетовый пледи', qty: 1, price: 1490 },
+            { sku: 'SKU-2', name: 'Белая кружка', qty: 1, price: 1000 }
+          ],
+          meta: { channel: 'web', note: 'Тестовый заказ' }
+        };
+        resultArea.innerHTML = '';
+        resultArea.className = '';
+        resultArea.appendChild(renderOrder(demo));
+      });
+
+      // initial empty
+      showEmpty('Вводите ID заказа в поле слева и нажмите «Найти».');
+    })();
+  </script>
+</body>
+</html>
