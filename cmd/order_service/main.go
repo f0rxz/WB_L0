@@ -37,7 +37,7 @@ func main() {
 	defer db.Close()
 
 	r := repo.NewRepo(db)
-	c := cache.NewCache()
+	c := cache.NewCacheWithTTL(cfg.CacheTTL)
 	u := usecase.NewUsecase(r, c)
 
 	reader := kafka.NewReader(kafka.ReaderConfig{
@@ -111,6 +111,9 @@ func main() {
 	if err := consumer.Close(); err != nil {
 		log.Printf("consumer close error: %v", err)
 	}
+
+	c.Close()
+
 	if err := u.Shutdown(ctx); err != nil {
 		log.Printf("usecase shutdown error: %v", err)
 	}
