@@ -8,6 +8,7 @@ import (
 	"os"
 	"os/signal"
 	"syscall"
+	"time"
 
 	"orderservice/internal/broker"
 	"orderservice/internal/config"
@@ -66,7 +67,9 @@ func main() {
 		w.Header().Set("Content-Type", "text/html; charset=utf-8")
 		w.WriteHeader(http.StatusOK)
 
-		w.Write(data)
+		if _, err := w.Write(data); err != nil {
+			log.Printf("http write error: %v", err)
+		}
 	})
 
 	rtr.Get("/orders/{id}", func(w http.ResponseWriter, r *http.Request) {
@@ -99,10 +102,16 @@ func main() {
 	<-ctx.Done()
 	log.Println("main: shutting down")
 
-	if err := server.Shutdown(context.Background()); err != nil {
+	shutdownCtx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+	if err := server.Shutdown(shutdownCtx); err != nil {
 		log.Printf("http server shutdown error: %v", err)
 	}
 
-	consumer.Close()
-	u.Shutdown(ctx)
+	if err := consumer.Close(); err != nil {
+		log.Printf("consumer close error: %v", err)
+	}
+	if err := u.Shutdown(ctx); err != nil {
+		log.Printf("usecase shutdown error: %v", err)
+	}
 }

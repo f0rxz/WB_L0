@@ -3,6 +3,8 @@ package repo
 import (
 	"context"
 	"encoding/json"
+	"errors"
+	"log"
 
 	"orderservice/internal/model"
 
@@ -30,7 +32,11 @@ func (o repo) CreateOrder(ctx context.Context, ord *model.Order) (string, error)
 	if err != nil {
 		return "", err
 	}
-	defer tx.Rollback(ctx)
+	defer func() {
+		if err := tx.Rollback(ctx); err != nil && !errors.Is(err, pgx.ErrTxClosed) {
+			log.Printf("repo: tx rollback error: %v", err)
+		}
+	}()
 
 	_, err = tx.Exec(ctx, `
 		INSERT INTO orders (
@@ -238,6 +244,9 @@ func (o repo) GetOrderByID(ctx context.Context, id string) (*model.Order, error)
 			return nil, err
 		}
 		items = append(items, item)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
 	}
 	ord.Items = items
 

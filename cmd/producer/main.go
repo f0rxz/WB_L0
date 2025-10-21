@@ -31,7 +31,11 @@ func main() {
 		RequiredAcks: kafka.RequireAll,
 	}
 
-	defer writer.Close()
+	defer func() {
+		if err := writer.Close(); err != nil {
+			log.Printf("kafka writer close error: %v", err)
+		}
+	}()
 
 	err = writer.WriteMessages(context.Background(),
 		kafka.Message{

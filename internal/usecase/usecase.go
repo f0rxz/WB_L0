@@ -3,6 +3,7 @@ package usecase
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"log"
 	"time"
 
@@ -37,11 +38,9 @@ func (u *usecase) Start(ctx context.Context) error {
 
 	orders, err := u.repo.GetAllOrders(loadCtx)
 	if err != nil {
-		log.Printf("usecase: failed to load orders for cache: %v\n", err)
-	} else {
-		u.cache.SetupCache(orders)
-		log.Printf("usecase: loaded %d orders into cache\n", len(orders))
+		return fmt.Errorf("usecase: failed to load orders for cache: %w", err)
 	}
+	u.cache.SetupCache(orders)
 	return nil
 }
 

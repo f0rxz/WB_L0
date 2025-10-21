@@ -2,6 +2,7 @@ package broker
 
 import (
 	"context"
+	"fmt"
 	"log"
 
 	"github.com/segmentio/kafka-go"
@@ -17,7 +18,7 @@ func NewConsumer(reader *kafka.Reader) *Consumer {
 
 func (c *Consumer) Consume(ctx context.Context, handler func(ctx context.Context, key, value []byte) error) error {
 	if c.reader == nil {
-		return nil
+		return fmt.Errorf("kafka: reader is nil")
 	}
 
 	log.Println("kafka: consumer started")
