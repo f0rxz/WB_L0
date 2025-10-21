@@ -10,8 +10,8 @@ import (
 	"syscall"
 	"time"
 
+	"orderservice/config"
 	"orderservice/internal/broker"
-	"orderservice/internal/config"
 	"orderservice/internal/infrastructure/cache"
 	"orderservice/internal/infrastructure/repo"
 	"orderservice/internal/usecase"
@@ -22,7 +22,7 @@ import (
 )
 
 func main() {
-	cfg, err := config.LoadConfig()
+	cfg, err := config.Load()
 	if err != nil {
 		log.Fatalf("Failed to load config: %v", err)
 	}
