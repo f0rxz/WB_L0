@@ -71,6 +71,10 @@ func (u *usecase) HandleKafkaMessage(ctx context.Context, key, value []byte) err
 		return err
 	}
 
+	if err := ord.Validate(); err != nil {
+		return fmt.Errorf("usecase: invalid order data: %w", err)
+	}
+
 	wctx, cancel := context.WithTimeout(ctx, 10*time.Second)
 	defer cancel()
 
