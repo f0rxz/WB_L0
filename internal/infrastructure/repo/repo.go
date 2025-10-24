@@ -38,100 +38,101 @@ func (o repo) CreateOrder(ctx context.Context, ord *model.Order) (string, error)
 		}
 	}()
 
-	_, err = tx.Exec(ctx, `
-		INSERT INTO orders (
+	query :=
+		`INSERT INTO orders (
 			order_uid, track_number, entry, locale, internal_signature,
 			customer_id, delivery_service, shardkey, sm_id, date_created, oof_shard
 		) VALUES (
 			@order_uid, @track_number, @entry, @locale, @internal_signature,
 			@customer_id, @delivery_service, @shardkey, @sm_id, @date_created, @oof_shard
-		)`,
-		pgx.NamedArgs{
-			"order_uid":          ord.OrderUID,
-			"track_number":       ord.TrackNumber,
-			"entry":              ord.Entry,
-			"locale":             ord.Locale,
-			"internal_signature": ord.InternalSignature,
-			"customer_id":        ord.CustomerID,
-			"delivery_service":   ord.DeliveryService,
-			"shardkey":           ord.ShardKey,
-			"sm_id":              ord.SMID,
-			"date_created":       ord.DateCreated,
-			"oof_shard":          ord.OOFShard,
-		},
-	)
+		)`
+	args := pgx.NamedArgs{
+		"order_uid":          ord.OrderUID,
+		"track_number":       ord.TrackNumber,
+		"entry":              ord.Entry,
+		"locale":             ord.Locale,
+		"internal_signature": ord.InternalSignature,
+		"customer_id":        ord.CustomerID,
+		"delivery_service":   ord.DeliveryService,
+		"shardkey":           ord.ShardKey,
+		"sm_id":              ord.SMID,
+		"date_created":       ord.DateCreated,
+		"oof_shard":          ord.OOFShard,
+	}
+	_, err = tx.Exec(ctx, query, args)
 	if err != nil {
 		return "", err
 	}
 
-	_, err = tx.Exec(ctx, `
-		INSERT INTO deliveries (order_uid, name, phone, zip, city, address, region, email)
-		VALUES (@order_uid, @name, @phone, @zip, @city, @address, @region, @email)`,
-		pgx.NamedArgs{
-			"order_uid": ord.OrderUID,
-			"name":      ord.Delivery.Name,
-			"phone":     ord.Delivery.Phone,
-			"zip":       ord.Delivery.Zip,
-			"city":      ord.Delivery.City,
-			"address":   ord.Delivery.Address,
-			"region":    ord.Delivery.Region,
-			"email":     ord.Delivery.Email,
-		},
-	)
+	query =
+		`INSERT INTO deliveries (order_uid, name, phone, zip, city, address, region, email)
+		VALUES (@order_uid, @name, @phone, @zip, @city, @address, @region, @email)`
+	args = pgx.NamedArgs{
+		"order_uid": ord.OrderUID,
+		"name":      ord.Delivery.Name,
+		"phone":     ord.Delivery.Phone,
+		"zip":       ord.Delivery.Zip,
+		"city":      ord.Delivery.City,
+		"address":   ord.Delivery.Address,
+		"region":    ord.Delivery.Region,
+		"email":     ord.Delivery.Email,
+	}
+	_, err = tx.Exec(ctx, query, args)
 	if err != nil {
 		return "", err
 	}
 
-	_, err = tx.Exec(ctx, `
-		INSERT INTO payments (
+	query =
+		`INSERT INTO payments (
 			order_uid, transaction, request_id, currency, provider,
 			amount, payment_dt, bank, delivery_cost, goods_total, custom_fee
 		) VALUES (
 			@order_uid, @transaction, @request_id, @currency, @provider,
 			@amount, @payment_dt, @bank, @delivery_cost, @goods_total, @custom_fee
-		)`,
-		pgx.NamedArgs{
-			"order_uid":     ord.OrderUID,
-			"transaction":   ord.Payment.Transaction,
-			"request_id":    ord.Payment.RequestID,
-			"currency":      ord.Payment.Currency,
-			"provider":      ord.Payment.Provider,
-			"amount":        ord.Payment.Amount,
-			"payment_dt":    ord.Payment.PaymentDt,
-			"bank":          ord.Payment.Bank,
-			"delivery_cost": ord.Payment.DeliveryCost,
-			"goods_total":   ord.Payment.GoodsTotal,
-			"custom_fee":    ord.Payment.CustomFee,
-		},
-	)
+		)`
+	args = pgx.NamedArgs{
+		"order_uid":     ord.OrderUID,
+		"transaction":   ord.Payment.Transaction,
+		"request_id":    ord.Payment.RequestID,
+		"currency":      ord.Payment.Currency,
+		"provider":      ord.Payment.Provider,
+		"amount":        ord.Payment.Amount,
+		"payment_dt":    ord.Payment.PaymentDt,
+		"bank":          ord.Payment.Bank,
+		"delivery_cost": ord.Payment.DeliveryCost,
+		"goods_total":   ord.Payment.GoodsTotal,
+		"custom_fee":    ord.Payment.CustomFee,
+	}
+	_, err = tx.Exec(ctx, query, args)
 	if err != nil {
 		return "", err
 	}
 
-	for _, item := range ord.Items {
-		_, err = tx.Exec(ctx, `
-			INSERT INTO items (
+	query =
+		`INSERT INTO items (
 				order_uid, chrt_id, track_number, price, rid,
 				name, sale, size, total_price, nm_id, brand, status
 			) VALUES (
 				@order_uid, @chrt_id, @track_number, @price, @rid,
 				@name, @sale, @size, @total_price, @nm_id, @brand, @status
-			)`,
-			pgx.NamedArgs{
-				"order_uid":    ord.OrderUID,
-				"chrt_id":      item.ChrtID,
-				"track_number": item.TrackNumber,
-				"price":        item.Price,
-				"rid":          item.RID,
-				"name":         item.Name,
-				"sale":         item.Sale,
-				"size":         item.Size,
-				"total_price":  item.TotalPrice,
-				"nm_id":        item.NMID,
-				"brand":        item.Brand,
-				"status":       item.Status,
-			},
-		)
+			)`
+
+	for _, item := range ord.Items {
+		args = pgx.NamedArgs{
+			"order_uid":    ord.OrderUID,
+			"chrt_id":      item.ChrtID,
+			"track_number": item.TrackNumber,
+			"price":        item.Price,
+			"rid":          item.RID,
+			"name":         item.Name,
+			"sale":         item.Sale,
+			"size":         item.Size,
+			"total_price":  item.TotalPrice,
+			"nm_id":        item.NMID,
+			"brand":        item.Brand,
+			"status":       item.Status,
+		}
+		_, err = tx.Exec(ctx, query, args)
 		if err != nil {
 			return "", err
 		}
@@ -147,12 +148,15 @@ func (o repo) CreateOrder(ctx context.Context, ord *model.Order) (string, error)
 func (o repo) GetOrderByID(ctx context.Context, id string) (*model.Order, error) {
 	ord := &model.Order{}
 
-	row := o.db.QueryRow(ctx, `
+	query := `
 		SELECT order_uid, track_number, entry, locale, internal_signature,
-		       customer_id, delivery_service, shardkey, sm_id, date_created, oof_shard
+			   customer_id, delivery_service, shardkey, sm_id, date_created, oof_shard
 		FROM orders
 		WHERE order_uid = $1
-	`, id)
+	`
+	args := []interface{}{id}
+
+	row := o.db.QueryRow(ctx, query, args...)
 
 	err := row.Scan(
 		&ord.OrderUID,
@@ -171,11 +175,12 @@ func (o repo) GetOrderByID(ctx context.Context, id string) (*model.Order, error)
 		return nil, err
 	}
 
-	row = o.db.QueryRow(ctx, `
+	query = `
 		SELECT name, phone, zip, city, address, region, email
 		FROM deliveries
 		WHERE order_uid = $1
-	`, id)
+	`
+	row = o.db.QueryRow(ctx, query, args...)
 
 	err = row.Scan(
 		&ord.Delivery.Name,
@@ -190,12 +195,13 @@ func (o repo) GetOrderByID(ctx context.Context, id string) (*model.Order, error)
 		return nil, err
 	}
 
-	row = o.db.QueryRow(ctx, `
+	query = `
 		SELECT transaction, request_id, currency, provider, amount,
-		       payment_dt, bank, delivery_cost, goods_total, custom_fee
+			   payment_dt, bank, delivery_cost, goods_total, custom_fee
 		FROM payments
 		WHERE order_uid = $1
-	`, id)
+	`
+	row = o.db.QueryRow(ctx, query, args...)
 
 	err = row.Scan(
 		&ord.Payment.Transaction,
@@ -213,12 +219,13 @@ func (o repo) GetOrderByID(ctx context.Context, id string) (*model.Order, error)
 		return nil, err
 	}
 
-	rows, err := o.db.Query(ctx, `
+	query = `
 		SELECT chrt_id, track_number, price, rid, name,
-		       sale, size, total_price, nm_id, brand, status
+			   sale, size, total_price, nm_id, brand, status
 		FROM items
 		WHERE order_uid = $1
-	`, id)
+	`
+	rows, err := o.db.Query(ctx, query, args...)
 	if err != nil {
 		return nil, err
 	}

@@ -3,12 +3,13 @@ package connectors
 import (
 	"context"
 	"fmt"
+	"orderservice/config"
 
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
-func ConnectPostgres(ctx context.Context) (*pgxpool.Pool, error) {
-	dsn := "postgres://postgres:postgres@localhost:5432/orderservice?sslmode=disable"
+func ConnectPostgres(ctx context.Context, cfg *config.Config) (*pgxpool.Pool, error) {
+	dsn := cfg.PostgresDSN
 
 	pgxconf, err := pgxpool.ParseConfig(dsn)
 	if err != nil {
