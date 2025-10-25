@@ -8,12 +8,14 @@ import (
 )
 
 type Config struct {
-	PostgresDSN  string        `envconfig:"POSTGRES_DSN" default:"postgres://postgres:postgres@localhost:5432/orderservice?sslmode=disable"`
-	KafkaBrokers string        `envconfig:"KAFKA_BROKERS" default:"localhost:9092"`
-	KafkaTopic   string        `envconfig:"KAFKA_TOPIC" default:"orders"`
-	KafkaGroupID string        `envconfig:"KAFKA_GROUP_ID" default:"order-service"`
-	HTTPPort     string        `envconfig:"HTTP_PORT" default:":8080"`
-	CacheTTL     time.Duration `envconfig:"CACHE_TTL" default:"24h"`
+	PostgresDSN     string        `envconfig:"POSTGRES_DSN" default:"postgres://postgres:postgres@localhost:5432/orderservice?sslmode=disable"`
+	KafkaBrokers    string        `envconfig:"KAFKA_BROKERS" default:"localhost:9092"`
+	KafkaOrderTopic string        `envconfig:"KAFKA_ORDER_TOPIC" default:"orders"`
+	KafkaRetryTopic string        `envconfig:"KAFKA_RETRY_TOPIC" default:"orders_retry"`
+	KafkaDLQTopic   string        `envconfig:"KAFKA_DLQ_TOPIC" default:"orders_dlq"`
+	KafkaGroupID    string        `envconfig:"KAFKA_GROUP_ID" default:"order-service"`
+	HTTPPort        string        `envconfig:"HTTP_PORT" default:":8080"`
+	CacheTTL        time.Duration `envconfig:"CACHE_TTL" default:"24h"`
 }
 
 func Load() (*Config, error) {

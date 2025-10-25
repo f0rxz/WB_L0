@@ -45,7 +45,6 @@
       .container{ grid-template-columns: 1fr; padding: 18px; }
     }
 
-    /* Left pane (controls) */
     .panel{
       background: linear-gradient(180deg, rgba(124,58,237,0.06), rgba(124,58,237,0.02));
       border-radius:18px;
@@ -79,7 +78,6 @@
     h1{ font-size:20px; margin:0; color:var(--purple-700); }
     p.lead{ margin:6px 0 0; color:var(--muted); font-size:13px; }
 
-    /* input row */
     .controls{
       display:flex;
       gap:12px;
@@ -128,7 +126,6 @@
     button.primary:active{ transform: translateY(1px) scale(0.997); }
     button.primary[disabled]{ opacity:0.6; cursor:not-allowed; box-shadow:none; transform:none; }
 
-    /* small helper row */
     .helper{
       margin-top:12px;
       display:flex;
@@ -148,7 +145,6 @@
       color:var(--muted);
     }
 
-    /* right pane (result) */
     .result-panel{
       background: linear-gradient(180deg, rgba(255,255,255,0.8), rgba(255,255,255,0.6));
       border-radius:18px;
@@ -220,12 +216,11 @@
       font-size:13px;
       color:white;
     }
-    .status-pending{ background: #f97316; } /* orange */
+    .status-pending{ background: #f97316; }
     .status-paid{ background: var(--success); }
     .status-canceled{ background: var(--danger); }
     .status-default{ background: var(--purple-600); }
 
-    /* JSON pretty area */
     pre.json{
       margin:0;
       overflow:auto;
@@ -238,11 +233,9 @@
       line-height:1.45;
     }
 
-    /* small utilities */
     .muted{ color:var(--muted); }
     .hr{ height:1px; background:rgba(17,24,39,0.04); border-radius:1px; margin:8px 0; }
 
-    /* subtle enter animation */
     .fade-in {
       opacity:0;
       transform: translateY(6px);
@@ -252,7 +245,6 @@
       to{ opacity:1; transform:none; }
     }
 
-    /* loader */
     .loader {
       width:18px;
       height:18px;
@@ -266,7 +258,6 @@
     }
     @keyframes spin { to{ transform:rotate(360deg);} }
 
-    /* small footer */
     footer.foot{
       margin-top:12px;
       font-size:12px;
@@ -277,7 +268,6 @@
       align-items:center;
     }
 
-    /* responsive tweaks */
     @media (max-width:520px){
       .controls{ flex-direction:column; align-items:stretch; }
       button.primary{ width:100%; }
@@ -286,10 +276,9 @@
 </head>
 <body>
   <main class="container" role="main">
-    <!-- Left column: controls -->
     <section class="panel" aria-labelledby="app-title">
       <header class="app-header">
-        <div class="logo" aria-hidden="true">OS</div>
+        <div class="logo" aria-hidden="true">WB</div>
         <div>
           <h1 id="app-title">Поиск заказа</h1>
           <p class="lead">Введите ID заказа, чтобы получить информацию с сервера.</p>
@@ -311,7 +300,6 @@
       </div>
     </section>
 
-    <!-- Right column: result -->
     <aside class="result-panel" aria-labelledby="result-head">
       <h2 id="result-head" style="margin:0; font-size:15px; color:var(--purple-700)">Информация о заказе</h2>
 
@@ -326,11 +314,9 @@
       const orderIdInput = document.getElementById('orderId');
       const fetchBtn = document.getElementById('fetchBtn');
       const resultArea = document.getElementById('resultArea');
-      // helper: format pretty JSON with syntax highlighting (simple)
       function prettyJson(obj){
         try{
           const json = JSON.stringify(obj, null, 2);
-          // basic syntax highlight
           return json
             .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
             .replace(/("(\\u[a-zA-Z0-9]{4}|\\[^u]|[^\\"])*"(\s*:)?|\b(true|false|null)\b|-?\d+(?:\.\d*)?(?:[eE][+\-]?\d+)?)/g, function (match) {
@@ -346,14 +332,11 @@
         }
       }
 
-      // build the order card UI
       function renderOrder(order){
-        // simple known fields: id, status, amount, currency, created_at, customer
         const rows = [];
         const known = ['id','status','amount','currency','created_at','customer','items'];
         known.forEach(k => { if (order[k] !== undefined) rows.push([k, order[k]]); });
 
-        // add any other keys
         Object.keys(order).forEach(k => {
           if (!known.includes(k)) rows.push([k, order[k]]);
         });
@@ -361,7 +344,6 @@
         const card = document.createElement('div');
         card.className = 'card fade-in';
 
-        // header
         const header = document.createElement('div');
         header.style.display = 'flex';
         header.style.justifyContent = 'space-between';
@@ -388,7 +370,6 @@
         card.appendChild(header);
         card.appendChild(createRowDivider());
 
-        // rows
         rows.forEach(([k,v]) => {
           const row = document.createElement('div');
           row.className = 'row';
@@ -397,12 +378,10 @@
           key.textContent = prettifyKey(k);
           const val = document.createElement('div');
           val.className = 'val';
-          // nested objects / arrays -> show compact summary or amount
           if (typeof v === 'object' && v !== null){
             if (Array.isArray(v)){
               val.textContent = v.length + ' item' + (v.length === 1 ? '' : 's');
             } else {
-              // try show name or email
               val.textContent = v.name || v.id || JSON.stringify(v);
             }
           } else {
@@ -413,7 +392,6 @@
           card.appendChild(row);
         });
 
-        // raw JSON
         const hr = document.createElement('div');
         hr.className = 'hr';
         card.appendChild(hr);
@@ -481,7 +459,6 @@
       }
 
 
-      // perform fetch
       async function fetchOrder(){
         const id = orderIdInput.value.trim();
         if (!id){
@@ -511,7 +488,6 @@
         }
       }
 
-      // keyboard: Enter triggers
       orderIdInput.addEventListener('keydown', function(e){
         if (e.key === 'Enter') {
           fetchOrder();
@@ -520,8 +496,6 @@
 
       fetchBtn.addEventListener('click', fetchOrder);
 
-      // Optional: demo mode — если запрос к /orders не отвечает (например, открыли файл напрямую),
-      // можно двойным кликом по логотипу показать демонстрационные данные.
       const logo = document.querySelector('.logo');
       logo.title = 'Двойной клик — демо';
       logo.addEventListener('dblclick', function(){
@@ -543,7 +517,6 @@
         resultArea.appendChild(renderOrder(demo));
       });
 
-      // initial empty
       showEmpty('Вводите ID заказа в поле слева и нажмите «Найти».');
     })();
   </script>

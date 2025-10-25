@@ -3,14 +3,18 @@ package handlers
 import (
 	"orderservice/internal/controller/http/handlers/handler"
 	"orderservice/internal/usecase"
+
+	"go.uber.org/zap"
 )
 
 type Handlers struct {
-	Order *handler.Handler
+	Order  *handler.Handler
+	logger *zap.Logger
 }
 
-func NewHandlers(u usecase.OrderUsecase) *Handlers {
+func NewHandlers(logger *zap.Logger, u usecase.OrderUsecase) *Handlers {
 	return &Handlers{
-		Order: handler.NewHandler(u),
+		Order:  handler.NewHandler(u, logger),
+		logger: logger,
 	}
 }

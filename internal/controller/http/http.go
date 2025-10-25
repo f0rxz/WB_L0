@@ -3,19 +3,22 @@ package http
 import (
 	"context"
 	"errors"
-	"log"
 	"net/http"
 
 	"github.com/go-chi/chi/v5"
 
 	"orderservice/internal/controller/http/handlers"
+	"orderservice/internal/controller/http/middleware"
 	"orderservice/internal/usecase"
+
+	"go.uber.org/zap"
 )
 
-func NewRouter(u usecase.OrderUsecase) http.Handler {
-	h := handlers.NewHandlers(u)
+func NewRouter(logger *zap.Logger, u usecase.OrderUsecase) http.Handler {
+	h := handlers.NewHandlers(logger, u)
 
 	r := chi.NewRouter()
+	r.Use(middleware.RequestLogger(logger))
 
 	r.Get("/", h.Order.Root)
 	r.Get("/orders/{id}", h.Order.GetOrder)
@@ -29,22 +32,23 @@ type Server interface {
 }
 
 type serverImpl struct {
-	srv *http.Server
+	srv    *http.Server
+	logger *zap.Logger
 }
 
-func NewServer(handler http.Handler, addr string) Server {
+func NewServer(logger *zap.Logger, handler http.Handler, addr string) Server {
 	s := &http.Server{
 		Addr:    addr,
 		Handler: handler,
 	}
-	return &serverImpl{srv: s}
+	return &serverImpl{srv: s, logger: logger}
 }
 
 func (s *serverImpl) Start() {
 	go func() {
-		log.Println("HTTP server started at", s.srv.Addr)
+		s.logger.Info("HTTP server started", zap.String("address", s.srv.Addr))
 		if err := s.srv.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
-			log.Fatalf("http server error: %v", err)
+			s.logger.Fatal("HTTP server error", zap.Error(err))
 		}
 	}()
 }

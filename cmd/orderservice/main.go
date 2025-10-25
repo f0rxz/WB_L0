@@ -10,6 +10,8 @@ import (
 	"orderservice/config"
 	ctrlhttp "orderservice/internal/controller/http"
 	"orderservice/internal/di"
+
+	"go.uber.org/zap"
 )
 
 func main() {
@@ -21,7 +23,12 @@ func main() {
 	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
 	defer stop()
 
-	container, err := di.New(ctx, cfg)
+	logger, err := zap.NewProduction()
+	if err != nil {
+		log.Fatalf("Failed to create logger: %v", err)
+	}
+
+	container, err := di.New(logger, ctx, cfg)
 	if err != nil {
 		log.Fatalf("failed to initialize app: %v", err)
 	}
@@ -33,7 +40,7 @@ func main() {
 		}
 	}()
 
-	server := ctrlhttp.NewServer(container.Router, cfg.HTTPPort)
+	server := ctrlhttp.NewServer(logger, container.Router, cfg.HTTPPort)
 	server.Start()
 
 	<-ctx.Done()

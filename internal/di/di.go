@@ -18,6 +18,7 @@ import (
 
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/segmentio/kafka-go"
+	"go.uber.org/zap"
 )
 
 type Container struct {
@@ -27,11 +28,12 @@ type Container struct {
 	Cache    cache.Cache
 	Usecase  usecase.OrderUsecase
 	Consumer *consumer.Consumer
-	Kafka    *ctrlkafka.KafkaController
+	Kafka    ctrlkafka.KafkaController
 	Router   http.Handler
+	logger   *zap.Logger
 }
 
-func New(ctx context.Context, cfg *config.Config) (*Container, error) {
+func New(logger *zap.Logger, ctx context.Context, cfg *config.Config) (*Container, error) {
 	db, err := connectors.ConnectPostgres(ctx, cfg)
 	if err != nil {
 		return nil, fmt.Errorf("app: connect postgres: %w", err)
@@ -48,16 +50,23 @@ func New(ctx context.Context, cfg *config.Config) (*Container, error) {
 		log.Printf("di: failed to preload cache, starting with empty cache: %v", err)
 	} else {
 		c.SetupCache(orders)
+		log.Printf("di: preloaded cache with %d orders", len(orders))
 	}
 
 	reader := kafka.NewReader(kafka.ReaderConfig{
 		Brokers: []string{cfg.KafkaBrokers},
-		Topic:   cfg.KafkaTopic,
+		Topic:   cfg.KafkaOrderTopic,
 		GroupID: cfg.KafkaGroupID,
 	})
-	cons := consumer.NewConsumer(reader)
 
-	router := ctrlhttp.NewRouter(u)
+	writer := kafka.NewWriter(kafka.WriterConfig{
+		Brokers:  []string{cfg.KafkaBrokers},
+		Topic:    cfg.KafkaRetryTopic,
+		Balancer: &kafka.LeastBytes{},
+	})
+	cons := consumer.NewConsumer(reader, writer)
+
+	router := ctrlhttp.NewRouter(logger, u)
 
 	kctrl := ctrlkafka.NewKafkaController(u, cons)
 

@@ -26,7 +26,7 @@ func main() {
 
 	writer := &kafka.Writer{
 		Addr:         kafka.TCP(cfg.KafkaBrokers),
-		Topic:        cfg.KafkaTopic,
+		Topic:        cfg.KafkaOrderTopic,
 		Balancer:     &kafka.LeastBytes{},
 		RequiredAcks: kafka.RequireAll,
 	}

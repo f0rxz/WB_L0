@@ -11,19 +11,25 @@ import (
 	"orderservice/pkg/consumer"
 )
 
-type KafkaController struct {
+type KafkaController interface {
+	Start(ctx context.Context) error
+	Stop(ctx context.Context) error
+	handleMessage(ctx context.Context, key, value []byte) error
+}
+
+type kafkaController struct {
 	uc       usecase.OrderUsecase
 	consumer *consumer.Consumer
 }
 
-func NewKafkaController(uc usecase.OrderUsecase, cons *consumer.Consumer) *KafkaController {
-	return &KafkaController{
+func NewKafkaController(uc usecase.OrderUsecase, cons *consumer.Consumer) KafkaController {
+	return &kafkaController{
 		uc:       uc,
 		consumer: cons,
 	}
 }
 
-func (kc *KafkaController) Start(ctx context.Context) error {
+func (kc *kafkaController) Start(ctx context.Context) error {
 	log.Println("kafka controller: starting consumer loop")
 
 	err := kc.consumer.Consume(ctx, func(ctx context.Context, key, value []byte) error {
@@ -37,7 +43,7 @@ func (kc *KafkaController) Start(ctx context.Context) error {
 	return nil
 }
 
-func (kc *KafkaController) Stop(ctx context.Context) error {
+func (kc *kafkaController) Stop(ctx context.Context) error {
 	log.Println("kafka controller: stopping...")
 	if err := kc.consumer.Close(); err != nil {
 		log.Printf("kafka controller: close error: %v", err)
@@ -46,7 +52,7 @@ func (kc *KafkaController) Stop(ctx context.Context) error {
 	return nil
 }
 
-func (kc *KafkaController) handleMessage(ctx context.Context, key, value []byte) error {
+func (kc *kafkaController) handleMessage(ctx context.Context, key, value []byte) error {
 	var ord model.Order
 	if err := json.Unmarshal(value, &ord); err != nil {
 		return err
